@@ -1,13 +1,12 @@
 import streamlit as st
 import urllib.parse
-import webbrowser
 
 # Function to generate AbeBooks search URL
 def generate_abebooks_url(book_title=None, author=None):
     base_url = "https://www.abebooks.com/servlet/SearchResults"
     query_params = {
-        "an": author if author else "",  # Only include if provided
-        "tn": book_title if book_title else "",  # Only include if provided
+        "an": author if author else "",
+        "tn": book_title if book_title else "",
         "bi": 0,
         "bx": "off",
         "cm_sp": "SearchF-_-Advs-_-Result",
@@ -28,7 +27,6 @@ def generate_libby_url(book_title=None, author=None):
 def generate_goodreads_url(book_title=None, author=None):
     base_url = "https://www.goodreads.com/search"
     
-    # Combine both title and author if available, otherwise use whatever is provided
     if book_title and author:
         query = f"{book_title} {author}"
     else:
@@ -48,38 +46,36 @@ def generate_amazon_url(book_title=None, author=None):
 
 # Streamlit UI
 st.title('Book Search App 📚')
-st.write("Fill in **either** the book title, the author's name, or both. We're not too picky! 😉")
+st.write("Fill in **either** the book title, the author's name, or both. Then click the button for the platform you'd like to search.")
 
 # Input form
 book_title = st.text_input("Book Title (Optional)")
 author = st.text_input("Author (Optional)")
 
-# Checkbox for opening all links in new tabs
-open_all_tabs = st.checkbox("Open all links in new tabs")
+# Only show the buttons when either title or author is provided
+if book_title or author:
+    # Generate URLs for each platform
+    abebooks_url = generate_abebooks_url(book_title, author)
+    libby_url = generate_libby_url(book_title, author)
+    goodreads_url = generate_goodreads_url(book_title, author)
+    amazon_url = generate_amazon_url(book_title, author)
 
-# Perform search and display results when the button is clicked
-if st.button("Search"):
-    if book_title or author:
-        st.write(f"Searching for '{book_title}' by {author}...")
-
-        # Generate URLs for each platform
-        abebooks_url = generate_abebooks_url(book_title, author)
-        libby_url = generate_libby_url(book_title, author)
-        goodreads_url = generate_goodreads_url(book_title, author)
-        amazon_url = generate_amazon_url(book_title, author)
-
-        # Display the search result links
-        st.subheader("Results:")
-        st.markdown(f"[Goodreads]({goodreads_url})")
-        st.markdown(f"[Amazon]({amazon_url})")
-        st.markdown(f"[AbeBooks]({abebooks_url})")
-        st.markdown(f"[Libby]({libby_url})")
-
-        # Open all links in new tabs if the user checks the box
-        if open_all_tabs:
-            webbrowser.open_new_tab(goodreads_url)
-            webbrowser.open_new_tab(amazon_url)
-            webbrowser.open_new_tab(abebooks_url)
-            webbrowser.open_new_tab(libby_url)
-    else:
-        st.warning("Please enter at least the book title or the author’s name. You can't get away with leaving both empty! 😜")
+    # Create clickable links styled as buttons for each platform
+    st.markdown(f"""
+        <style>
+        .button {{
+            display: inline-block;
+            padding: 0.5em 1em;
+            text-decoration: none;
+            color: white;
+            background-color: #007bff;
+            border-radius: 5px;
+        }}
+        </style>
+        <a href="{goodreads_url}" target="_blank" class="button">Search on Goodreads</a>
+        <a href="{amazon_url}" target="_blank" class="button">Search on Amazon</a>
+        <a href="{abebooks_url}" target="_blank" class="button">Search on AbeBooks</a>
+        <a href="{libby_url}" target="_blank" class="button">Search on Libby</a>
+    """, unsafe_allow_html=True)
+else:
+    st.warning("Please enter at least the book title or the author’s name to generate search links.")
