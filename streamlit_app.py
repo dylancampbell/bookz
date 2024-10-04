@@ -28,6 +28,7 @@ def clean_up_book_details(book_title=None, author=None):
 
 # --- URL GENERATION FUNCTIONS ---
 
+# Function to generate AbeBooks search URL
 def generate_abebooks_url(book_title=None, author=None):
     base_url = "https://www.abebooks.com/servlet/SearchResults"
     query_params = {
@@ -42,24 +43,28 @@ def generate_abebooks_url(book_title=None, author=None):
     url = base_url + "?" + urllib.parse.urlencode(query_params)
     return url
 
+# Function to generate Libby search URL
 def generate_libby_url(book_title=None, author=None):
     base_url = "https://libbyapp.com/search/lapl/search/query-"
     search_query = f"{urllib.parse.quote(book_title)}%20{urllib.parse.quote(author)}" if book_title and author else urllib.parse.quote(book_title or author)
     url = base_url + search_query + "/page-1"
     return url
 
+# Function to generate Bookshop.org search URL
 def generate_bookshop_url(book_title=None, author=None):
     base_url = "https://bookshop.org/books"
     query_params = {"keywords": f"{book_title} {author}"}
     url = base_url + "?" + urllib.parse.urlencode(query_params)
     return url
 
+# Function to generate StoryGraph search URL
 def generate_storygraph_url(book_title=None, author=None):
     base_url = "https://app.thestorygraph.com/browse"
     query_params = {"search_term": f"{book_title} {author}"}
     url = base_url + "?" + urllib.parse.urlencode(query_params)
     return url
 
+# Function to generate Goodreads search URL
 def generate_goodreads_url(book_title=None, author=None):
     base_url = "https://www.goodreads.com/search"
     
@@ -72,6 +77,7 @@ def generate_goodreads_url(book_title=None, author=None):
     url = base_url + "?" + urllib.parse.urlencode(query_params)
     return url
 
+# Function to generate Amazon search URL
 def generate_amazon_url(book_title=None, author=None):
     base_url = "https://www.amazon.com/s"
     query = f"{book_title} {author}" if book_title and author else book_title or author
@@ -79,6 +85,7 @@ def generate_amazon_url(book_title=None, author=None):
     url = base_url + "?" + urllib.parse.urlencode(query_params)
     return url
 
+# Function to generate LAPL search URL
 def generate_lapl_url(book_title=None, author=None):
     base_url = "https://ls2pac.lapl.org/?section=search"
     if book_title and author:
@@ -139,14 +146,15 @@ st.session_state['previous_author'] = author
 if not st.session_state['links_generated']:
     if st.button("Generate Links") and (book_title or author):
         cleaned_title, cleaned_author = clean_up_book_details(book_title, author)
+        # Display the cleaned-up data below the input fields
         st.session_state['cleaned_title'] = cleaned_title
         st.session_state['cleaned_author'] = cleaned_author
         st.session_state['links_generated'] = True
 
-# Display the cleaned-up title and author below the input fields
-if st.session_state['links_generated']:
-    st.write(f"**Corrected Title:** {st.session_state['cleaned_title']}")
-    st.write(f"**Corrected Author:** {st.session_state['cleaned_author']}")
+# Display cleaned-up title and author
+if 'cleaned_title' in st.session_state and 'cleaned_author' in st.session_state:
+    st.markdown(f"**Cleaned Title**: {st.session_state['cleaned_title']}")
+    st.markdown(f"**Cleaned Author**: {st.session_state['cleaned_author']}")
 
 # Generate URLs and buttons if links are generated
 if st.session_state['links_generated']:
@@ -167,8 +175,8 @@ if st.session_state['links_generated']:
 
     with col1:
         st.markdown("<h3 style='text-align: center;'>Review</h3>", unsafe_allow_html=True)
-        st.markdown(f'<a href="{storygraph_url}" target="_blank" class="button storygraph">StoryGraph</a>', unsafe_allow_html=True)
         st.markdown(f'<a href="{goodreads_url}" target="_blank" class="button goodreads">Goodreads</a>', unsafe_allow_html=True)
+        st.markdown(f'<a href="{storygraph_url}" target="_blank" class="button storygraph">StoryGraph</a>', unsafe_allow_html=True)
 
     with col2:
         st.markdown("<h3 style='text-align: center;'>Borrow</h3>", unsafe_allow_html=True)
@@ -177,9 +185,10 @@ if st.session_state['links_generated']:
 
     with col3:
         st.markdown("<h3 style='text-align: center;'>Buy</h3>", unsafe_allow_html=True)
+        st.markdown(f'<a href="{amazon_url}" target="_blank" class="button amazon">Amazon</a>', unsafe_allow_html=True)
         st.markdown(f'<a href="{abebooks_url}" target="_blank" class="button abebooks">AbeBooks</a>', unsafe_allow_html=True)
         st.markdown(f'<a href="{bookshop_url}" target="_blank" class="button bookshop">Bookshop.org</a>', unsafe_allow_html=True)
-        st.markdown(f'<a href="{amazon_url}" target="_blank" class="button amazon">Amazon</a>', unsafe_allow_html=True)
+
     # Styling for the buttons
     st.markdown("""
         <style>
