@@ -15,17 +15,14 @@ def generate_urls(cleaned_title, cleaned_author):
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown("<h3 style='text-align: center;'>Review</h3>", unsafe_allow_html=True)
         st.markdown(f'<a href="{goodreads_url}" target="_blank" class="button goodreads">Goodreads</a>', unsafe_allow_html=True)
         st.markdown(f'<a href="{storygraph_url}" target="_blank" class="button storygraph">StoryGraph</a>', unsafe_allow_html=True)
 
     with col2:
-        st.markdown("<h3 style='text-align: center;'>Borrow</h3>", unsafe_allow_html=True)
         st.markdown(f'<a href="{libby_url}" target="_blank" class="button libby">Libby</a>', unsafe_allow_html=True)
         st.markdown(f'<a href="{lapl_url}" target="_blank" class="button lapl">LAPL</a>', unsafe_allow_html=True)
 
     with col3:
-        st.markdown("<h3 style='text-align: center;'>Buy</h3>", unsafe_allow_html=True)
         st.markdown(f'<a href="{amazon_url}" target="_blank" class="button amazon">Amazon</a>', unsafe_allow_html=True)
         st.markdown(f'<a href="{abebooks_url}" target="_blank" class="button abebooks">AbeBooks</a>', unsafe_allow_html=True)
         st.markdown(f'<a href="{bookshop_url}" target="_blank" class="button bookshop">Bookshop.org</a>', unsafe_allow_html=True)
