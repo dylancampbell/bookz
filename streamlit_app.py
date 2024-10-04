@@ -19,16 +19,19 @@ def clean_up_book_details(book_title=None, author=None):
     if response.status_code == 200:
         data = response.json()
         if 'items' in data and len(data['items']) > 0:
-            # Get the first book result
             book_data = data['items'][0]['volumeInfo']
-            cleaned_title = book_data.get('title', book_title)
-            cleaned_author = ', '.join(book_data.get('authors', [author]))
+            # Handle case where only author is provided
+            if author and not book_title:
+                # Ignore any returned title and leave the title blank
+                cleaned_title = ""
+                cleaned_author = ', '.join(book_data.get('authors', [author]))
+            else:
+                cleaned_title = book_data.get('title', book_title)
+                cleaned_author = ', '.join(book_data.get('authors', [author])) if book_title else author
             return cleaned_title, cleaned_author
     return book_title, author
 
 # --- URL GENERATION FUNCTIONS ---
-
-# Function to generate AbeBooks search URL
 def generate_abebooks_url(book_title=None, author=None):
     base_url = "https://www.abebooks.com/servlet/SearchResults"
     query_params = {
@@ -40,76 +43,46 @@ def generate_abebooks_url(book_title=None, author=None):
         "recentlyadded": "all",
         "sortby": 17
     }
-    url = base_url + "?" + urllib.parse.urlencode(query_params)
-    return url
+    return base_url + "?" + urllib.parse.urlencode(query_params)
 
-# Function to generate Libby search URL
 def generate_libby_url(book_title=None, author=None):
     base_url = "https://libbyapp.com/search/lapl/search/query-"
     search_query = f"{urllib.parse.quote(book_title)}%20{urllib.parse.quote(author)}" if book_title and author else urllib.parse.quote(book_title or author)
-    url = base_url + search_query + "/page-1"
-    return url
+    return base_url + search_query + "/page-1"
 
-# Function to generate Bookshop.org search URL
 def generate_bookshop_url(book_title=None, author=None):
     base_url = "https://bookshop.org/books"
     query_params = {"keywords": f"{book_title} {author}"}
-    url = base_url + "?" + urllib.parse.urlencode(query_params)
-    return url
+    return base_url + "?" + urllib.parse.urlencode(query_params)
 
-# Function to generate StoryGraph search URL
 def generate_storygraph_url(book_title=None, author=None):
     base_url = "https://app.thestorygraph.com/browse"
     query_params = {"search_term": f"{book_title} {author}"}
-    url = base_url + "?" + urllib.parse.urlencode(query_params)
-    return url
+    return base_url + "?" + urllib.parse.urlencode(query_params)
 
-# Function to generate Goodreads search URL
 def generate_goodreads_url(book_title=None, author=None):
     base_url = "https://www.goodreads.com/search"
-    
-    if book_title and author:
-        query = f"{book_title} {author}"
-    else:
-        query = book_title or author
-
+    query = f"{book_title} {author}" if book_title and author else book_title or author
     query_params = {"q": query, "search_type": "books"}
-    url = base_url + "?" + urllib.parse.urlencode(query_params)
-    return url
+    return base_url + "?" + urllib.parse.urlencode(query_params)
 
-# Function to generate Amazon search URL
 def generate_amazon_url(book_title=None, author=None):
     base_url = "https://www.amazon.com/s"
     query = f"{book_title} {author}" if book_title and author else book_title or author
     query_params = {"k": query}
-    url = base_url + "?" + urllib.parse.urlencode(query_params)
-    return url
+    return base_url + "?" + urllib.parse.urlencode(query_params)
 
-# Function to generate LAPL search URL
 def generate_lapl_url(book_title=None, author=None):
     base_url = "https://ls2pac.lapl.org/?section=search"
-    if book_title and author:
-        search_data = {
-            "isAnd": True,
-            "searchTokens": [
-                {"searchString": author, "type": "Contains", "field": "Author"},
-                {"searchString": book_title, "type": "Contains", "field": "Title"}
-            ]
-        }
-    elif book_title:
-        search_data = {
-            "isAnd": True,
-            "searchTokens": [{"searchString": book_title, "type": "Contains", "field": "Title"}]
-        }
-    else:
-        search_data = {
-            "isAnd": True,
-            "searchTokens": [{"searchString": author, "type": "Contains", "field": "Author"}]
-        }
-
+    search_data = {
+        "isAnd": True,
+        "searchTokens": [
+            {"searchString": author, "type": "Contains", "field": "Author"} if author else None,
+            {"searchString": book_title, "type": "Contains", "field": "Title"} if book_title else None,
+        ]
+    }
     search_query = urllib.parse.quote(json.dumps(search_data))
-    url = f"{base_url}&term={search_query}&page=0&pageSize=10&sortKey=Relevancy&db=ls2pac"
-    return url
+    return f"{base_url}&term={search_query}&page=0&pageSize=10&sortKey=Relevancy&db=ls2pac"
 
 # --- STREAMLIT UI ---
 
@@ -118,10 +91,12 @@ if 'book_title' not in st.session_state:
     st.session_state['book_title'] = ""
 if 'author' not in st.session_state:
     st.session_state['author'] = ""
+if 'links_generated' not in st.session_state:
+    st.session_state['links_generated'] = False
 
 # Title and description
 st.title('Bookworm 📚')
-st.write("Enter the book title and author's name. We'll clean it up before generating search links.")
+st.write("Enter the book title and/or author's name. We'll clean it up before generating search links.")
 
 # Input fields for book title and author
 st.session_state['book_title'] = st.text_input("Book Title", value=st.session_state['book_title'])
@@ -130,29 +105,24 @@ st.session_state['author'] = st.text_input("Author", value=st.session_state['aut
 book_title = st.session_state['book_title']
 author = st.session_state['author']
 
-# Session state to track whether links have been generated
-if 'links_generated' not in st.session_state:
-    st.session_state['links_generated'] = False
-
-# Reset the state if the user changes the input fields
+# Re-enable the "Generate Links" button if inputs are modified
 if book_title != st.session_state.get('previous_title') or author != st.session_state.get('previous_author'):
     st.session_state['links_generated'] = False
 
-# Store the current values for comparison on the next run
+# Store the current values for comparison
 st.session_state['previous_title'] = book_title
 st.session_state['previous_author'] = author
 
-# Button to generate links
+# Generate Links button logic
 if not st.session_state['links_generated']:
     if st.button("Generate Links") and (book_title or author):
         cleaned_title, cleaned_author = clean_up_book_details(book_title, author)
-        # Display the cleaned-up data below the input fields
         st.session_state['cleaned_title'] = cleaned_title
         st.session_state['cleaned_author'] = cleaned_author
         st.session_state['links_generated'] = True
 
 # Display cleaned-up title and author
-if 'cleaned_title' in st.session_state and 'cleaned_author' in st.session_state:
+if st.session_state['links_generated']:
     st.markdown(f"**Cleaned Title**: {st.session_state['cleaned_title']}")
     st.markdown(f"**Cleaned Author**: {st.session_state['cleaned_author']}")
 
@@ -204,25 +174,25 @@ if st.session_state['links_generated']:
             width: 200px;
         }
         .goodreads {
-            background-color: #D7A168; /* Goodreads beige */
+            background-color: #D7A168;
         }
         .amazon {
-            background-color: #FF9900; /* Amazon orange */
+            background-color: #FF9900;
         }
         .abebooks {
-            background-color: #CC3333; /* AbeBooks red */
+            background-color: #CC3333;
         }
         .libby {
-            background-color: #8E5A9E; /* Libby purple */
+            background-color: #8E5A9E;
         }
         .lapl {
-            background-color: #003C71; /* LAPL dark blue */
+            background-color: #003C71;
         }
         .bookshop {
-            background-color: #017AFF; /* Bookshop.org blue */
+            background-color: #017AFF;
         }
         .storygraph {
-            background-color: #5B21B6; /* StoryGraph purple */
+            background-color: #5B21B6;
         }
         </style>
     """, unsafe_allow_html=True)
