@@ -13,7 +13,9 @@ def clean_up_book_details(book_title=None, author=None):
             query += "+"
         query += f"inauthor:{author}"
 
-    google_books_api = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote(query)}"
+    # Retrieve the API key from Streamlit secrets
+    api_key = st.secrets["google_books"]["api_key"]
+    google_books_api = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote(query)}&key={api_key}"
     
     try:
         response = requests.get(google_books_api)
@@ -24,7 +26,6 @@ def clean_up_book_details(book_title=None, author=None):
             book_data = data['items'][0]['volumeInfo']
             # Handle case where only author is provided
             if author and not book_title:
-                # Ignore any returned title and leave the title blank
                 cleaned_title = ""
                 cleaned_author = ', '.join(book_data.get('authors', [author]))
             else:
@@ -38,6 +39,7 @@ def clean_up_book_details(book_title=None, author=None):
     except requests.exceptions.RequestException as e:
         st.error(f"Error connecting to the Google Books API: {e}")
         return book_title, author
+
 
 # --- URL GENERATION FUNCTIONS ---
 def generate_abebooks_url(book_title=None, author=None):
