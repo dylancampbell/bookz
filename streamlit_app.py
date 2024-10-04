@@ -38,3 +38,26 @@ if st.session_state['links_generated']:
 
     # Generate and display URLs
     generate_urls(st.session_state['cleaned_title'], st.session_state['cleaned_author'])
+
+# CSS Styling in streamlit_app.py
+st.markdown("""
+    <style>
+    .button {
+        display: inline-block;
+        padding: 10px 20px;
+        margin: 10px;
+        font-size: 16px;
+        color: white;
+        text-align: center;
+        text-decoration: none;
+        border-radius: 8px;
+    }
+    .goodreads { background-color: #D7A168; }
+    .amazon { background-color: #FF9900; }
+    .abebooks { background-color: #CC3333; }
+    .libby { background-color: #8E5A9E; }
+    .lapl { background-color: #003C71; }
+    .bookshop { background-color: #017AFF; }
+    .storygraph { background-color: #5B21B6; }
+    </style>
+""", unsafe_allow_html=True)
