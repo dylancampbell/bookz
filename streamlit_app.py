@@ -1,53 +1,40 @@
+# streamlit_app.py
+
 import streamlit as st
-import requests
-import urllib.parse
+from api import clean_up_book_details  # Importing from api.py
+from urls import generate_urls  # Importing from urls.py
 
-# Function to clean up author/title using Google Books API
-def clean_up_book_details(book_title=None, author=None):
-    # Construct the query string
-    query = ""
-    if book_title:
-        query += f"intitle:{book_title}"
-    if author:
-        if query:
-            query += "+"
-        query += f"inauthor:{author}"
+# Initialize session state for inputs
+if 'book_title' not in st.session_state:
+    st.session_state['book_title'] = ""
+if 'author' not in st.session_state:
+    st.session_state['author'] = ""
+if 'links_generated' not in st.session_state:
+    st.session_state['links_generated'] = False
 
-    # Retrieve the API key from Streamlit secrets
-    api_key = st.secrets["google_books"]["api_key"]
-    
-    # Build the API request URL
-    google_books_api = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote(query)}&key={api_key}"
-    
-    try:
-        # Make the API request
-        response = requests.get(google_books_api)
-        response.raise_for_status()  # Raises an error for bad status codes
-        data = response.json()
+# Title and description
+st.title('Bookworm 📚')
+st.write("Enter the book title and/or author's name. We'll clean it up before generating search links.")
 
-        if 'items' in data and len(data['items']) > 0:
-            # Extract cleaned-up title and author
-            book_data = data['items'][0]['volumeInfo']
-            cleaned_title = book_data.get('title', book_title)
-            cleaned_author = ', '.join(book_data.get('authors', [author]))
-            return cleaned_title, cleaned_author
-        else:
-            st.error("No matching books found.")
-            return book_title, author
+# Input fields
+st.session_state['book_title'] = st.text_input("Book Title", value=st.session_state['book_title'])
+st.session_state['author'] = st.text_input("Author", value=st.session_state['author'])
 
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error connecting to the Google Books API: {e}")
-        return book_title, author
+book_title = st.session_state['book_title']
+author = st.session_state['author']
 
-# Streamlit UI
-st.title('Book Search App 📚')
+# Generate Links button logic
+if not st.session_state['links_generated']:
+    if st.button("Generate Links") and (book_title or author):
+        cleaned_title, cleaned_author = clean_up_book_details(book_title, author)
+        st.session_state['cleaned_title'] = cleaned_title
+        st.session_state['cleaned_author'] = cleaned_author
+        st.session_state['links_generated'] = True
 
-# Input fields for book title and author
-book_title = st.text_input("Book Title")
-author = st.text_input("Author")
+# Display cleaned-up title and author
+if st.session_state['links_generated']:
+    st.markdown(f"**Cleaned Title**: {st.session_state['cleaned_title']}")
+    st.markdown(f"**Cleaned Author**: {st.session_state['cleaned_author']}")
 
-# Button to generate links
-if st.button("Generate Links"):
-    cleaned_title, cleaned_author = clean_up_book_details(book_title, author)
-    st.write(f"Cleaned Title: {cleaned_title}")
-    st.write(f"Cleaned Author: {cleaned_author}")
+    # Generate and display URLs
+    generate_urls(st.session_state['cleaned_title'], st.session_state['cleaned_author'])
