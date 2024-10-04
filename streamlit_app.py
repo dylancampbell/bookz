@@ -1,5 +1,6 @@
 import streamlit as st
 import urllib.parse
+import json
 
 # Function to generate AbeBooks search URL
 def generate_abebooks_url(book_title=None, author=None):
@@ -44,38 +45,99 @@ def generate_amazon_url(book_title=None, author=None):
     url = base_url + "?" + urllib.parse.urlencode(query_params)
     return url
 
+# Function to generate LAPL search URL
+def generate_lapl_url(book_title=None, author=None):
+    base_url = "https://ls2pac.lapl.org/?section=search"
+    if book_title and author:
+        search_data = {
+            "isAnd": True,
+            "searchTokens": [
+                {"searchString": author, "type": "Contains", "field": "Author"},
+                {"searchString": book_title, "type": "Contains", "field": "Title"}
+            ]
+        }
+    elif book_title:
+        search_data = {
+            "isAnd": True,
+            "searchTokens": [{"searchString": book_title, "type": "Contains", "field": "Title"}]
+        }
+    else:
+        search_data = {
+            "isAnd": True,
+            "searchTokens": [{"searchString": author, "type": "Contains", "field": "Author"}]
+        }
+
+    search_query = urllib.parse.quote(json.dumps(search_data))
+    url = f"{base_url}&term={search_query}&page=0&pageSize=10&sortKey=Relevancy&db=ls2pac"
+    return url
+
 # Streamlit UI
 st.title('Book Search App 📚')
-st.write("Fill in **either** the book title, the author's name, or both. Then click the button for the platform you'd like to search.")
+st.write("Fill in **either** the book title, the author's name, or both. Then click 'Generate Links' to create buttons for each platform.")
 
-# Input form
-book_title = st.text_input("Book Title (Optional)")
-author = st.text_input("Author (Optional)")
+# Input form (labels updated)
+book_title = st.text_input("Book Title")
+author = st.text_input("Author")
 
-# Only show the buttons when either title or author is provided
-if book_title or author:
+# Session state to track whether links have been generated
+if 'links_generated' not in st.session_state:
+    st.session_state['links_generated'] = False
+
+# Reset the state if the user changes the input fields
+if book_title != st.session_state.get('previous_title') or author != st.session_state.get('previous_author'):
+    st.session_state['links_generated'] = False
+
+# Store the current values for comparison on the next run
+st.session_state['previous_title'] = book_title
+st.session_state['previous_author'] = author
+
+# Button to generate links
+if not st.session_state['links_generated']:
+    if st.button("Generate Links") and (book_title or author):
+        st.session_state['links_generated'] = True
+
+# Generate URLs and buttons if links are generated
+if st.session_state['links_generated']:
     # Generate URLs for each platform
     abebooks_url = generate_abebooks_url(book_title, author)
     libby_url = generate_libby_url(book_title, author)
     goodreads_url = generate_goodreads_url(book_title, author)
     amazon_url = generate_amazon_url(book_title, author)
+    lapl_url = generate_lapl_url(book_title, author)
 
-    # Create clickable links styled as buttons for each platform
+    # Create clickable links styled as buttons for each platform with their branding colors
     st.markdown(f"""
         <style>
         .button {{
-            display: inline-block;
-            padding: 0.5em 1em;
+            display: block;
+            padding: 0.75em 1.5em;
             text-decoration: none;
-            color: white;
-            background-color: #007bff;
+            font-weight: bold;
             border-radius: 5px;
+            margin: 10px auto;
+            color: white !important;
+            text-align: center;
+            width: 200px;
+        }}
+        .goodreads {{
+            background-color: #D7A168; /* Goodreads beige */
+        }}
+        .amazon {{
+            background-color: #FF9900; /* Amazon orange */
+        }}
+        .abebooks {{
+            background-color: #CC3333; /* AbeBooks red */
+        }}
+        .libby {{
+            background-color: #8E5A9E; /* Libby purple */
+        }}
+        .lapl {{
+            background-color: #003C71; /* LAPL dark blue */
         }}
         </style>
-        <a href="{goodreads_url}" target="_blank" class="button">Search on Goodreads</a>
-        <a href="{amazon_url}" target="_blank" class="button">Search on Amazon</a>
-        <a href="{abebooks_url}" target="_blank" class="button">Search on AbeBooks</a>
-        <a href="{libby_url}" target="_blank" class="button">Search on Libby</a>
+        <a href="{goodreads_url}" target="_blank" class="button goodreads">Search on Goodreads</a>
+        <a href="{amazon_url}" target="_blank" class="button amazon">Search on Amazon</a>
+        <a href="{abebooks_url}" target="_blank" class="button abebooks">Search on AbeBooks</a>
+        <a href="{libby_url}" target="_blank" class="button libby">Search on Libby</a>
+        <a href="{lapl_url}" target="_blank" class="button lapl">Search on LAPL</a>
     """, unsafe_allow_html=True)
-else:
-    st.warning("Please enter at least the book title or the author’s name to generate search links.")
