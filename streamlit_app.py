@@ -89,13 +89,22 @@ def generate_lapl_url(book_title=None, author=None):
 
 # --- STREAMLIT UI ---
 
+# Store input in session state to persist across refreshes
+if 'book_title' not in st.session_state:
+    st.session_state['book_title'] = ""
+if 'author' not in st.session_state:
+    st.session_state['author'] = ""
+
 # Title and description
 st.title('Book Search App 📚')
 st.write("Fill in **either** the book title, the author's name, or both. Then click 'Generate Links' to create buttons for each platform.")
 
 # Input fields for book title and author
-book_title = st.text_input("Book Title")
-author = st.text_input("Author")
+st.session_state['book_title'] = st.text_input("Book Title", value=st.session_state['book_title'])
+st.session_state['author'] = st.text_input("Author", value=st.session_state['author'])
+
+book_title = st.session_state['book_title']
+author = st.session_state['author']
 
 # Session state to track whether links have been generated
 if 'links_generated' not in st.session_state:
@@ -161,11 +170,11 @@ if st.session_state['links_generated']:
             background-color: #5B21B6; /* StoryGraph purple */
         }}
         </style>
-        <a href="{goodreads_url}" target="_blank" class="button goodreads">Search on Goodreads</a>
-        <a href="{amazon_url}" target="_blank" class="button amazon">Search on Amazon</a>
-        <a href="{abebooks_url}" target="_blank" class="button abebooks">Search on AbeBooks</a>
-        <a href="{libby_url}" target="_blank" class="button libby">Search on Libby</a>
-        <a href="{lapl_url}" target="_blank" class="button lapl">Search on LAPL</a>
-        <a href="{bookshop_url}" target="_blank" class="button bookshop">Search on Bookshop.org</a>
-        <a href="{storygraph_url}" target="_blank" class="button storygraph">Search on StoryGraph</a>
+        <a href="{goodreads_url}" target="_blank" class="button goodreads">Goodreads</a>
+        <a href="{amazon_url}" target="_blank" class="button amazon">Amazon</a>
+        <a href="{abebooks_url}" target="_blank" class="button abebooks">AbeBooks</a>
+        <a href="{libby_url}" target="_blank" class="button libby">Libby</a>
+        <a href="{lapl_url}" target="_blank" class="button lapl">LAPL</a>
+        <a href="{bookshop_url}" target="_blank" class="button bookshop">Bookshop.org</a>
+        <a href="{storygraph_url}" target="_blank" class="button storygraph">StoryGraph</a>
     """, unsafe_allow_html=True)
