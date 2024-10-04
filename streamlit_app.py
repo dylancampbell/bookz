@@ -39,7 +39,7 @@ if st.session_state['links_generated']:
     # Generate and display URLs
     generate_urls(st.session_state['cleaned_title'], st.session_state['cleaned_author'])
 
-# CSS Styling in streamlit_app.py
+
 st.markdown("""
     <style>
     .button {
