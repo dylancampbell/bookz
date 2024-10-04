@@ -2,37 +2,61 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 
-# Function to search Goodreads
+# Function to search Goodreads with better error handling and header
 def search_goodreads(book_title, author):
-    search_url = f"https://www.goodreads.com/search?q={book_title}+{author}&search_type=books"
-    response = requests.get(search_url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    result = soup.find("a", class_="bookTitle")
-    if result:
-        link = "https://www.goodreads.com" + result['href']
-        return link
+    try:
+        search_url = f"https://www.goodreads.com/search?q={book_title}+{author}&search_type=books"
+        response = requests.get(search_url, headers={'User-Agent': 'Mozilla/5.0'})
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Debugging output
+        st.write("Goodreads HTML content (truncated):", soup.prettify()[:500])
+
+        # Find the first result link (improved)
+        result = soup.find("a", class_="bookTitle")
+        if result:
+            link = "https://www.goodreads.com" + result['href']
+            return link
+    except Exception as e:
+        st.error(f"Goodreads search failed: {e}")
     return None
 
-# Function to search Amazon
+# Function to search Amazon with better error handling and user-agent
 def search_amazon(book_title, author):
-    search_url = f"https://www.amazon.com/s?k={book_title}+{author}"
-    response = requests.get(search_url, headers={'User-Agent': 'Mozilla/5.0'})
-    soup = BeautifulSoup(response.content, 'html.parser')
-    result = soup.find("a", class_="a-link-normal a-text-normal")
-    if result:
-        link = "https://www.amazon.com" + result['href']
-        return link
+    try:
+        search_url = f"https://www.amazon.com/s?k={book_title}+{author}"
+        response = requests.get(search_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'})
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Debugging output
+        st.write("Amazon HTML content (truncated):", soup.prettify()[:500])
+
+        # Find the first product link
+        result = soup.find("a", class_="a-link-normal a-text-normal")
+        if result:
+            link = "https://www.amazon.com" + result['href']
+            return link
+    except Exception as e:
+        st.error(f"Amazon search failed: {e}")
     return None
 
-# Function to search AbeBooks
+# Function to search AbeBooks with better error handling
 def search_abebooks(book_title, author):
-    search_url = f"https://www.abebooks.com/servlet/SearchResults?sts=t&tn={book_title}&an={author}"
-    response = requests.get(search_url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    result = soup.find("a", class_="result-link")
-    if result:
-        link = result['href']
-        return link
+    try:
+        search_url = f"https://www.abebooks.com/servlet/SearchResults?sts=t&tn={book_title}&an={author}"
+        response = requests.get(search_url)
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Debugging output
+        st.write("AbeBooks HTML content (truncated):", soup.prettify()[:500])
+
+        # Find the first result link
+        result = soup.find("a", class_="result-link")
+        if result:
+            link = result['href']
+            return link
+    except Exception as e:
+        st.error(f"AbeBooks search failed: {e}")
     return None
 
 # Function to search Libby (direct link to library search)
