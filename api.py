@@ -11,13 +11,14 @@ def clean_up_book_details(book_title=None, author=None):
             query += "+"
         query += f"inauthor:{author}"
 
-    # Retrieve API key from secrets
+    # Retrieve API key securely from Streamlit secrets
     api_key = st.secrets["google_books"]["api_key"]
     google_books_api = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote(query)}&key={api_key}"
 
     try:
+        # Make the API request
         response = requests.get(google_books_api)
-        response.raise_for_status()
+        response.raise_for_status()  # Raises error for bad status codes
         data = response.json()
 
         if 'items' in data and len(data['items']) > 0:
@@ -30,5 +31,8 @@ def clean_up_book_details(book_title=None, author=None):
             return book_title, author
 
     except requests.exceptions.RequestException as e:
-        st.error(f"Error connecting to the Google Books API: {e}")
+        # User-friendly error message
+        st.error("Error connecting to the Google Books API. Please try again later.")
+        # Log the error without exposing sensitive information
+        print(f"API request failed: {e}")
         return book_title, author

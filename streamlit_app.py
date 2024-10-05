@@ -52,10 +52,6 @@ if st.session_state['links_generated']:
 
     # Generate and display URLs
     generate_urls(st.session_state['cleaned_title'], st.session_state['cleaned_author'])
-
-
-
-
 st.markdown("""
     <style>
     .button {
