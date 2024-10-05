@@ -15,6 +15,8 @@ if 'previous_title' not in st.session_state:
     st.session_state['previous_title'] = ""
 if 'previous_author' not in st.session_state:
     st.session_state['previous_author'] = ""
+if 'api_used' not in st.session_state:
+    st.session_state['api_used'] = False  # Track if the API was used
 
 # Title and description
 st.title('Bookworm 📚')
@@ -39,22 +41,25 @@ if book_title != st.session_state['previous_title'] or author != st.session_stat
 # Generate Links button logic
 if not st.session_state['links_generated']:
     if st.button("Generate Links") and (book_title or author):
+        # Only use the API if the checkbox is checked and the button is pressed
         if use_google_api:
             cleaned_title, cleaned_author = clean_up_book_details(book_title, author)
+            st.session_state['api_used'] = True  # Track that API was used
         else:
-            cleaned_title, cleaned_author = book_title, author  # Use raw inputs if Google API is off
+            cleaned_title, cleaned_author = book_title, author
+            st.session_state['api_used'] = False  # API was not used
 
         st.session_state['cleaned_title'] = cleaned_title
         st.session_state['cleaned_author'] = cleaned_author
         st.session_state['links_generated'] = True
 
-# Only display cleaned title/author if Google API was used
-if st.session_state['links_generated']:
-    if use_google_api:
-        st.markdown(f"**Cleaned Title**: {st.session_state['cleaned_title']}")
-        st.markdown(f"**Cleaned Author**: {st.session_state['cleaned_author']}")
+# Only display cleaned title/author if Google API was used and button was pressed
+if st.session_state['links_generated'] and st.session_state['api_used']:
+    st.markdown(f"**Cleaned Title**: {st.session_state['cleaned_title']}")
+    st.markdown(f"**Cleaned Author**: {st.session_state['cleaned_author']}")
 
-    # Column Headers
+# Column Headers
+if st.session_state['links_generated']:
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown("<h3 style='text-align: center;'>Rate</h3>", unsafe_allow_html=True)
