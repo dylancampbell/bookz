@@ -10,6 +10,12 @@ if 'author' not in st.session_state:
 if 'links_generated' not in st.session_state:
     st.session_state['links_generated'] = False
 
+# Initialize previous inputs to track changes
+if 'previous_title' not in st.session_state:
+    st.session_state['previous_title'] = ""
+if 'previous_author' not in st.session_state:
+    st.session_state['previous_author'] = ""
+
 # Title and description
 st.title('Bookworm 📚')
 st.write("Enter the book title and/or author's name. We'll clean it up before generating search links.")
@@ -24,22 +30,29 @@ st.session_state['author'] = st.text_input("Author", value=st.session_state['aut
 book_title = st.session_state['book_title']
 author = st.session_state['author']
 
+# Check if the user has changed the input text
+if book_title != st.session_state['previous_title'] or author != st.session_state['previous_author']:
+    st.session_state['links_generated'] = False  # Reset links if inputs change
+    st.session_state['previous_title'] = book_title  # Update the previous title
+    st.session_state['previous_author'] = author  # Update the previous author
+
 # Generate Links button logic
 if not st.session_state['links_generated']:
     if st.button("Generate Links") and (book_title or author):
         if use_google_api:
             cleaned_title, cleaned_author = clean_up_book_details(book_title, author)
         else:
-            cleaned_title, cleaned_author = book_title, author
+            cleaned_title, cleaned_author = book_title, author  # Use raw inputs if Google API is off
 
         st.session_state['cleaned_title'] = cleaned_title
         st.session_state['cleaned_author'] = cleaned_author
         st.session_state['links_generated'] = True
 
-# Display cleaned-up title and author
+# Only display cleaned title/author if Google API was used
 if st.session_state['links_generated']:
-    st.markdown(f"**Cleaned Title**: {st.session_state['cleaned_title']}")
-    st.markdown(f"**Cleaned Author**: {st.session_state['cleaned_author']}")
+    if use_google_api:
+        st.markdown(f"**Cleaned Title**: {st.session_state['cleaned_title']}")
+        st.markdown(f"**Cleaned Author**: {st.session_state['cleaned_author']}")
 
     # Column Headers
     col1, col2, col3 = st.columns(3)
@@ -52,6 +65,7 @@ if st.session_state['links_generated']:
 
     # Generate and display URLs
     generate_urls(st.session_state['cleaned_title'], st.session_state['cleaned_author'])
+
 st.markdown("""
     <style>
     .button {
