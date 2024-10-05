@@ -1,5 +1,3 @@
-# streamlit_app.py
-
 import streamlit as st
 from api import clean_up_book_details  # Importing from api.py
 from urls import generate_urls  # Importing from urls.py
@@ -16,6 +14,9 @@ if 'links_generated' not in st.session_state:
 st.title('Bookworm 📚')
 st.write("Enter the book title and/or author's name. We'll clean it up before generating search links.")
 
+# Checkbox to toggle Google API ping
+use_google_api = st.checkbox("Use Google Books API to clean up title and author?", value=False)
+
 # Input fields
 st.session_state['book_title'] = st.text_input("Book Title", value=st.session_state['book_title'])
 st.session_state['author'] = st.text_input("Author", value=st.session_state['author'])
@@ -26,7 +27,11 @@ author = st.session_state['author']
 # Generate Links button logic
 if not st.session_state['links_generated']:
     if st.button("Generate Links") and (book_title or author):
-        cleaned_title, cleaned_author = clean_up_book_details(book_title, author)
+        if use_google_api:
+            cleaned_title, cleaned_author = clean_up_book_details(book_title, author)
+        else:
+            cleaned_title, cleaned_author = book_title, author
+
         st.session_state['cleaned_title'] = cleaned_title
         st.session_state['cleaned_author'] = cleaned_author
         st.session_state['links_generated'] = True
@@ -36,8 +41,19 @@ if st.session_state['links_generated']:
     st.markdown(f"**Cleaned Title**: {st.session_state['cleaned_title']}")
     st.markdown(f"**Cleaned Author**: {st.session_state['cleaned_author']}")
 
+    # Column Headers
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("<h3 style='text-align: center;'>Rate</h3>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<h3 style='text-align: center;'>Borrow</h3>", unsafe_allow_html=True)
+    with col3:
+        st.markdown("<h3 style='text-align: center;'>Buy</h3>", unsafe_allow_html=True)
+
     # Generate and display URLs
     generate_urls(st.session_state['cleaned_title'], st.session_state['cleaned_author'])
+
+
 
 
 st.markdown("""
@@ -45,12 +61,13 @@ st.markdown("""
     .button {
         display: inline-block;
         padding: 10px 20px;
-        margin: 10px;
+        margin: 10px auto;  /* Center button horizontally */
         font-size: 16px;
-        color: white;
+        color: white !important;  /* Ensure button text is white */
         text-align: center;
         text-decoration: none;
         border-radius: 8px;
+        width: 200px;  /* You can adjust the width of the buttons as needed */
     }
     .goodreads { background-color: #D7A168; }
     .amazon { background-color: #FF9900; }
@@ -61,3 +78,4 @@ st.markdown("""
     .storygraph { background-color: #5B21B6; }
     </style>
 """, unsafe_allow_html=True)
+
